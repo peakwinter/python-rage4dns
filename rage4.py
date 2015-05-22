@@ -104,8 +104,8 @@ class Domain:
         response = api("rapi/getrecords/%s" % str(self.id), "GET")
         records = []
         for x in response:
-            record = Record(x["id"], x["name"], x["content"], x["type"],
-                x["ttl"], x["priority"], self.domain_id, x["failover_enabled"],
+            record = Record(x["name"], x["content"], x["type"], x["ttl"],
+                x["priority"], x["id"], self.id, x["failover_enabled"],
                 x["failover_content"])
             records.append(record)
         return records
@@ -113,7 +113,7 @@ class Domain:
 
 class Record:
     def __init__(
-            self, id, name, content, type, ttl, priority, domain_id=0,
+            self, name, content, type, ttl, priority, id=0, domain_id=0,
             failover_enabled=False, failover_content=None):
         self.id = id
         self.name = name
@@ -189,13 +189,14 @@ def api(endpoint, method, params={}, returns="json", username=None, key=None):
         key = ACCT_KEY
     if not username or not key:
         raise Exception("Username and account key must be declared")
-    authstr = base64.encodestring('%s:%s' % (username, passwd)).replace('\n', '')
+    authstr = base64.encodestring('%s:%s' % (username, key)).replace('\n', '')
     if params:
         endpoint += "?%s" % urlencode([(x, params[x]) for x in params])
     request = urllib2.Request("https://secure.rage4.com/%s" % endpoint)
     if method != "GET":
         request.get_method = lambda: method
     request.add_header("Authorization", "Basic %s" % authstr)
+    request.add_header("Content-Length", str(len(authstr)))
     response = urllib2.urlopen(request)
     if returns == "json":
         return json.loads(response.read())
