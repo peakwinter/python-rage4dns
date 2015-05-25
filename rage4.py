@@ -48,39 +48,36 @@ class Domain:
     def __repr__(self):
         return '<Domain %r>' % (self.name)
 
-    def add(self, ns1=None, ns2=None):
+    def add(self, ns1="ns35.r4ns.com", ns2="ns35.r4ns.net"):
         data = {"name": self.name, "email": self.owner_email}
-        if ns1 and ns2:
-            data["ns1"] = ns1
-            data["ns2"] = ns2
-        response = api("rapi/createregulardomain/", "POST", data)
+        response = api("rapi/createregulardomain/", data)
         if not response["status"]:
             raise Exception("Domain creation failed: %s" % response["error"])
         self.id = response["id"]
 
     def add_with_vanity_ns(self, nsname, nsprefix):
-        response = api("rapi/createregulardomainext/", "POST", {"name": self.name,
+        response = api("rapi/createregulardomainext/", {"name": self.name,
             "email": self.owner_email, "nsname": nsname, "nsprefix": nsprefix})
         if not response["status"]:
             raise Exception("Domain creation failed: %s" % response["error"])
         self.id = response["id"]
 
     def add_reverse_ipv4(self):
-        response = api("rapi/createreversedomain4/", "POST", {"name": self.name,
+        response = api("rapi/createreversedomain4/", {"name": self.name,
             "email": self.owner_email, "subnet": self.subnet_mask})
         if not response["status"]:
             raise Exception("Domain creation failed: %s" % response["error"])
         self.id = response["id"]
 
     def add_reverse_ipv6(self):
-        response = api("rapi/createreversedomain6/", "POST", {"name": self.name,
+        response = api("rapi/createreversedomain6/", {"name": self.name,
             "email": self.owner_email, "subnet": self.subnet_mask})
         if not response["status"]:
             raise Exception("Domain creation failed: %s" % response["error"])
         self.id = response["id"]
 
     def update(self, nsname="", nsprefix=""):
-        response = api("rapi/updatedomain/%s" % str(self.id), "POST", {"name": self.name,
+        response = api("rapi/updatedomain/%s" % str(self.id), {"name": self.name,
             "email": self.owner_email, "nsname": nsname, "nsprefix": nsprefix,
             "enablevanity": nsname and nsprefix})
         if not response["status"]:
@@ -88,7 +85,7 @@ class Domain:
         self.id = response["id"]
 
     def delete(self):
-        response = api("rapi/deletedomain/%s" % str(self.id), "POST")
+        response = api("rapi/deletedomain/%s" % str(self.id))
         if not response["status"]:
             raise Exception("Domain delete failed: %s" % response["error"])
 
@@ -101,7 +98,7 @@ class Domain:
         record.add(geo, active, self.id)
 
     def get_records(self):
-        response = api("rapi/getrecords/%s" % str(self.id), "GET")
+        response = api("rapi/getrecords/%s" % str(self.id))
         records = []
         for x in response:
             record = Record(x["name"], x["content"], x["type"], x["ttl"],
@@ -144,7 +141,7 @@ class Record:
             data["geozone"] = geo
         else:
             data["geolock"] = False
-        response = api("rapi/createrecord/%s" % str(self.domain_id), "POST", data)
+        response = api("rapi/createrecord/%s" % str(self.domain_id), data)
         if not response["status"]:
             raise Exception("Record creation failed: %s" % response["error"])
         self.id = response["id"]
@@ -165,24 +162,24 @@ class Record:
             data["geozone"] = geo
         else:
             data["geolock"] = False
-        response = api("rapi/updaterecord/%s" % str(self.id), "POST", data)
+        response = api("rapi/updaterecord/%s" % str(self.id), data)
         if not response["status"]:
             raise Exception("Record update failed: %s" % response["error"])
         self.id = response["id"]
 
     def delete(self):
-        response = api("rapi/deleterecord/%s" % str(self.id), "POST")
+        response = api("rapi/deleterecord/%s" % str(self.id))
         if not response["status"]:
             raise Exception("Record delete failed: %s" % response["error"])
 
     def failover(self, active=True):
         data = {"active": active}
-        response = api("rapi/setrecordfailover/%s" % str(self.id), "POST", data)
+        response = api("rapi/setrecordfailover/%s" % str(self.id), data)
         if not response["status"]:
             raise Exception("Record failover update failed: %s" % response["error"])
 
 
-def api(endpoint, method, params={}, returns="json", username=None, key=None):
+def api(endpoint, params={}, returns="json", username=None, key=None):
     if not username:
         username = USERNAME
     if not key:
@@ -193,10 +190,7 @@ def api(endpoint, method, params={}, returns="json", username=None, key=None):
     if params:
         endpoint += "?%s" % urlencode([(x, params[x]) for x in params])
     request = urllib2.Request("https://secure.rage4.com/%s" % endpoint)
-    if method != "GET":
-        request.get_method = lambda: method
     request.add_header("Authorization", "Basic %s" % authstr)
-    request.add_header("Content-Length", str(len(authstr)))
     response = urllib2.urlopen(request)
     if returns == "json":
         return json.loads(response.read())
@@ -204,7 +198,7 @@ def api(endpoint, method, params={}, returns="json", username=None, key=None):
         return response.read()
 
 def get_domains():
-    response = api("rapi/getdomains", "GET")
+    response = api("rapi/getdomains")
     domains = []
     for x in response:
         domain = Domain(x["name"], x["owner_email"], x["id"], x["type"], x["subnet_mask"])
@@ -214,13 +208,13 @@ def get_domains():
 def get_domain(id=None, name=None):
     response = None
     if id:
-        response = api("rapi/getdomain/%s" % str(id), "GET")
+        response = api("rapi/getdomain/%s" % str(id))
     elif name:
-        response = api("rapi/getdomainbyname/", "GET", {"name": name})
+        response = api("rapi/getdomainbyname/", {"name": name})
     if response:
         return Domain(response["name"], response["owner_email"], response["id"],
             response["type"], response["subnet_mask"])
 
 def get_geo_regions():
-    response = api("rapi/listgeoregions/", "GET")
+    response = api("rapi/listgeoregions/")
     return response

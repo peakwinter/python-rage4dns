@@ -24,7 +24,7 @@ Optional params for `add()` are NS1 and NS2. If not specified then the RAGE4 nam
 
 #### Delete domain
 ```
->>> domain = rage4.Domain("mydomain.xyz", "myname@mydomain.xyz")
+>>> domain = rage4.get_domain(name="mydomain.xyz")
 >>> domain.delete()
 ```
 
