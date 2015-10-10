@@ -147,7 +147,7 @@ class Record:
         self.id = response["id"]
 
     def update(self, geo=False, active=True):
-        data = {"name": self.name, "priority": self.priority, "active": active,
+        data = {"name": self.name, "content": self.content, "priority": self.priority, "active": active,
             "ttl": self.ttl}
         if self.failover_enabled:
             data["failover"] = self.failover_enabled
