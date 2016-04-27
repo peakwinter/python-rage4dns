@@ -31,7 +31,7 @@ Optional params for `add()` are NS1 and NS2. If not specified then the RAGE4 nam
 #### Get DNS records for a domain
 ```
 >>> domain = rage4.get_domain(name="mydomain.xyz")
->>> records = rage4.get_records()
+>>> records = domain.get_records()
 ```
 
 #### Add a DNS record to a domain
@@ -42,5 +42,5 @@ Optional params for `add()`: `geo` and `active`. `geo` can either be a geocode (
 >>> domain = rage4.get_domain(name="mydomain.xyz")
 >>> record = rage4.Record("www.mydomain.xyz", "127.0.0.1", rage4.RECORD_TYPES["A"],
 ...     3600, 1)
->>> record.add()
+>>> domain.add_record(record)
 ```

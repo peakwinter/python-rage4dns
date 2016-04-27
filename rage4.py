@@ -1,9 +1,13 @@
 import base64
 import json
-import urllib2
-import urlparse
-
-from urllib import urlencode
+try:
+    # Python 3
+    from urllib.request import urlopen, Request
+    from urllib.parse import urlencode
+except ImportError:
+    # Python 2
+    from urllib2 import urlopen, Request
+    from urllib import urlencode
 
 
 USERNAME = ""
@@ -46,48 +50,48 @@ class Domain:
         self.subnet_mask = subnet_mask
 
     def __repr__(self):
-        return '<Domain %r>' % (self.name)
+        return '<Domain {0}>'.format(self.name)
 
     def add(self, ns1="ns35.r4ns.com", ns2="ns35.r4ns.net"):
         data = {"name": self.name, "email": self.owner_email}
         response = api("rapi/createregulardomain/", data)
         if not response["status"]:
-            raise Exception("Domain creation failed: %s" % response["error"])
+            raise Exception("Domain creation failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def add_with_vanity_ns(self, nsname, nsprefix):
         response = api("rapi/createregulardomainext/", {"name": self.name,
             "email": self.owner_email, "nsname": nsname, "nsprefix": nsprefix})
         if not response["status"]:
-            raise Exception("Domain creation failed: %s" % response["error"])
+            raise Exception("Domain creation failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def add_reverse_ipv4(self):
         response = api("rapi/createreversedomain4/", {"name": self.name,
             "email": self.owner_email, "subnet": self.subnet_mask})
         if not response["status"]:
-            raise Exception("Domain creation failed: %s" % response["error"])
+            raise Exception("Domain creation failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def add_reverse_ipv6(self):
         response = api("rapi/createreversedomain6/", {"name": self.name,
             "email": self.owner_email, "subnet": self.subnet_mask})
         if not response["status"]:
-            raise Exception("Domain creation failed: %s" % response["error"])
+            raise Exception("Domain creation failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def update(self, nsname="", nsprefix=""):
-        response = api("rapi/updatedomain/%s" % str(self.id), {"name": self.name,
+        response = api("rapi/updatedomain/{0}".format(self.id), {"name": self.name,
             "email": self.owner_email, "nsname": nsname, "nsprefix": nsprefix,
             "enablevanity": nsname and nsprefix})
         if not response["status"]:
-            raise Exception("Domain update failed: %s" % response["error"])
+            raise Exception("Domain update failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def delete(self):
-        response = api("rapi/deletedomain/%s" % str(self.id))
+        response = api("rapi/deletedomain/{0}".format(self.id))
         if not response["status"]:
-            raise Exception("Domain delete failed: %s" % response["error"])
+            raise Exception("Domain delete failed: {0}".format(response["error"]))
 
     def get_zone(self):
         response = api("rapi/exportzonefile/", "GET", {"id": str(self.id)},
@@ -98,7 +102,7 @@ class Domain:
         record.add(geo, active, self.id)
 
     def get_records(self):
-        response = api("rapi/getrecords/%s" % str(self.id))
+        response = api("rapi/getrecords/{0}".format(self.id))
         records = []
         for x in response:
             record = Record(x["name"], x["content"], x["type"], x["ttl"],
@@ -123,7 +127,7 @@ class Record:
         self.failover_content = failover_content
 
     def __repr__(self):
-        return '<Record %s (%s)>' % (self.name, self.type)
+        return '<Record {0} ({1})>'.format(self.name, self.type)
 
     def add(self, geo=False, active=True, domain_id=0):
         if domain_id:
@@ -141,9 +145,9 @@ class Record:
             data["geozone"] = geo
         else:
             data["geolock"] = False
-        response = api("rapi/createrecord/%s" % str(self.domain_id), data)
+        response = api("rapi/createrecord/{0}".format(self.domain_id), data)
         if not response["status"]:
-            raise Exception("Record creation failed: %s" % response["error"])
+            raise Exception("Record creation failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def update(self, geo=False, active=True):
@@ -162,21 +166,21 @@ class Record:
             data["geozone"] = geo
         else:
             data["geolock"] = False
-        response = api("rapi/updaterecord/%s" % str(self.id), data)
+        response = api("rapi/updaterecord/{0}".format(self.id), data)
         if not response["status"]:
-            raise Exception("Record update failed: %s" % response["error"])
+            raise Exception("Record update failed: {0}".format(response["error"]))
         self.id = response["id"]
 
     def delete(self):
-        response = api("rapi/deleterecord/%s" % str(self.id))
+        response = api("rapi/deleterecord/{0}".format(self.id))
         if not response["status"]:
-            raise Exception("Record delete failed: %s" % response["error"])
+            raise Exception("Record delete failed: {0}".format(response["error"]))
 
     def failover(self, active=True):
         data = {"active": active}
-        response = api("rapi/setrecordfailover/%s" % str(self.id), data)
+        response = api("rapi/setrecordfailover/{0}".format(self.id), data)
         if not response["status"]:
-            raise Exception("Record failover update failed: %s" % response["error"])
+            raise Exception("Record failover update failed: {0}".format(response["error"]))
 
 
 def api(endpoint, params={}, returns="json", username=None, key=None):
@@ -186,16 +190,16 @@ def api(endpoint, params={}, returns="json", username=None, key=None):
         key = ACCT_KEY
     if not username or not key:
         raise Exception("Username and account key must be declared")
-    authstr = base64.encodestring('%s:%s' % (username, key)).replace('\n', '')
+    authstr = base64.encodestring('{0}:{1}'.format(username, key)).replace('\n', '')
     if params:
-        endpoint += "?%s" % urlencode([(x, params[x]) for x in params])
-    request = urllib2.Request("https://secure.rage4.com/%s" % endpoint)
-    request.add_header("Authorization", "Basic %s" % authstr)
-    response = urllib2.urlopen(request)
+        endpoint += "?{0}".format(urlencode([(x, params[x]) for x in params]))
+    request = Request("https://secure.rage4.com/{0}".format(endpoint))
+    request.add_header("Authorization", "Basic {0}".format(authstr))
+    response = urlopen(request)
     if returns == "json":
-        return json.loads(response.read())
+        return json.loads(response.read().encode("utf-8"))
     else:
-        return response.read()
+        return response.read().encode("utf-8")
 
 def get_domains():
     response = api("rapi/getdomains")
@@ -208,7 +212,7 @@ def get_domains():
 def get_domain(id=None, name=None):
     response = None
     if id:
-        response = api("rapi/getdomain/%s" % str(id))
+        response = api("rapi/getdomain/{0}".format(id))
     elif name:
         response = api("rapi/getdomainbyname/", {"name": name})
     if response:
